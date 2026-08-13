@@ -1,364 +1,1358 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>OMEGA RACING</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#05070d;
-    --panel:#0b1020ee;
-    --cyan:#2fe8ff;
-    --magenta:#ff2fd0;
-    --amber:#ffb020;
-    --text:#e8ecf5;
-    --dim:#7a86a8;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;width:100%;height:100%;background:var(--bg);overflow:hidden;
-    font-family:'Rajdhani',sans-serif; color:var(--text); user-select:none;}
-  .display{font-family:'Orbitron',sans-serif;}
-  #app{position:fixed;inset:0;}
-  canvas#gl{position:absolute;inset:0;display:block;}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUS — A Living World Simulator</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600;700&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Three.js for WebGL Rendering -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- OrbitControls for Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-  /* ---------- Screens ---------- */
-  .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
-    background:radial-gradient(120% 100% at 50% 0%, #101733 0%, #05070d 60%, #030408 100%);
-    z-index:10; animation:fadeIn .5s ease;}
-  .screen.hidden{display:none;}
-  @keyframes fadeIn{from{opacity:0;transform:scale(1.02)}to{opacity:1;transform:scale(1)}}
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: rgba(13, 17, 23, 0.75);
+      --bg-card-hover: rgba(22, 28, 38, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(0, 229, 255, 0.4);
+      
+      --text-main: #f0f4f8;
+      --text-muted: #8a99ad;
+      --text-dim: #4e5d6c;
+      
+      --accent-cyan: #00e5ff;
+      --accent-green: #00ff88;
+      --accent-amber: #ffb700;
+      --accent-red: #ff3366;
+      --accent-purple: #9d4edd;
+      
+      --glow-cyan: 0 0 15px rgba(0, 229, 255, 0.25);
+      --glow-red: 0 0 15px rgba(ff, 51, 102, 0.35);
+      
+      --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Geist Mono', monospace;
+      
+      --transition-fast: 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-  .grid-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:.35;
-    background-image:
-      linear-gradient(var(--cyan) 1px, transparent 1px),
-      linear-gradient(90deg, var(--cyan) 1px, transparent 1px);
-    background-size:60px 60px;
-    -webkit-mask-image:radial-gradient(80% 60% at 50% 30%, black 20%, transparent 75%);
-            mask-image:radial-gradient(80% 60% at 50% 30%, black 20%, transparent 75%);
-    animation:gridMove 8s linear infinite;
-  }
-  @keyframes gridMove{from{background-position:0 0,0 0}to{background-position:0 60px,60px 0}}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
 
-  .title-wrap{text-align:center; z-index:2; margin-bottom:36px;}
-  .kicker{letter-spacing:.5em; font-size:12px; color:var(--dim); margin-bottom:10px;}
-  h1.logo{font-size:clamp(38px,9vw,74px); margin:0; letter-spacing:4px; font-weight:900;
-    background:linear-gradient(90deg,var(--cyan),var(--magenta));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    filter:drop-shadow(0 0 18px rgba(47,232,255,.35)) drop-shadow(0 0 30px rgba(255,47,208,.2));
-    animation:pulseGlow 3.5s ease-in-out infinite;
-  }
-  @keyframes pulseGlow{0%,100%{filter:drop-shadow(0 0 18px rgba(47,232,255,.35)) drop-shadow(0 0 30px rgba(255,47,208,.2));}
-    50%{filter:drop-shadow(0 0 28px rgba(47,232,255,.55)) drop-shadow(0 0 46px rgba(255,47,208,.35));}}
-  .byline{font-size:13px; color:var(--dim); letter-spacing:.25em; margin-top:8px;}
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  .menu-list{display:flex;flex-direction:column;gap:10px;z-index:2;width:min(360px,80vw);}
-  .menu-btn{
-    position:relative; padding:14px 22px; background:rgba(20,26,48,.6);
-    border:1px solid rgba(47,232,255,.25); border-radius:6px; color:var(--text);
-    font-family:'Orbitron',sans-serif; font-size:14px; letter-spacing:.2em; text-align:left;
-    cursor:pointer; transition:all .18s ease; overflow:hidden;
-  }
-  .menu-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan);
-    transform:scaleY(0); transform-origin:bottom; transition:transform .18s ease;}
-  .menu-btn:hover, .menu-btn:active{background:rgba(47,232,255,.12); border-color:var(--cyan);
-    transform:translateX(6px); box-shadow:0 0 24px rgba(47,232,255,.15);}
-  .menu-btn:hover::before, .menu-btn:active::before{transform:scaleY(1);}
-  .menu-btn .sub{display:block;font-family:'Rajdhani',sans-serif;font-size:11px;color:var(--dim);letter-spacing:.1em;margin-top:3px;}
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-cyan);
+    }
 
-  .panel-title{font-family:'Orbitron',sans-serif; font-size:22px; letter-spacing:.15em; margin-bottom:22px; z-index:2;
-    color:var(--text); text-shadow:0 0 14px rgba(47,232,255,.3);}
+    /* Common Utility Classes */
+    .mono { font-family: var(--font-mono); }
+    .uppercase { text-transform: uppercase; letter-spacing: 0.08em; }
+    .glass {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all var(--transition-fast);
+    }
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-accent {
+      background: rgba(0, 229, 255, 0.1);
+      border-color: rgba(0, 229, 255, 0.3);
+      color: var(--accent-cyan);
+    }
+    .btn-accent:hover {
+      background: rgba(0, 229, 255, 0.2);
+      border-color: var(--accent-cyan);
+      box-shadow: var(--glow-cyan);
+    }
+    .btn-danger {
+      background: rgba(255, 51, 102, 0.1);
+      border-color: rgba(255, 51, 102, 0.3);
+      color: var(--accent-red);
+    }
+    .btn-danger:hover {
+      background: rgba(255, 51, 102, 0.2);
+      border-color: var(--accent-red);
+      box-shadow: var(--glow-red);
+    }
 
-  /* Car select */
-  #carSelectScreen{gap:0;}
-  .car-stage{width:min(560px,92vw); height:220px; position:relative; z-index:2; margin-bottom:14px;
-    background:radial-gradient(60% 80% at 50% 60%, rgba(47,232,255,.08), transparent 70%);
-    border-bottom:1px solid rgba(122,134,168,.2);}
-  #carPreview{width:100%;height:100%;}
-  .car-picker{display:flex; gap:14px; z-index:2; margin-bottom:20px;}
-  .car-chip{padding:8px 16px;border:1px solid rgba(122,134,168,.3);border-radius:20px;font-family:'Orbitron';
-    font-size:11px; letter-spacing:.15em; cursor:pointer; color:var(--dim); transition:.15s;}
-  .car-chip.active{color:var(--bg); background:var(--cyan); border-color:var(--cyan); box-shadow:0 0 18px rgba(47,232,255,.5);}
-  .car-name{font-family:'Orbitron'; font-size:20px; letter-spacing:.1em; z-index:2; margin-bottom:14px; text-align:center;}
-  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px 26px; width:min(420px,88vw); z-index:2; margin-bottom:22px;}
-  .stat{display:flex; flex-direction:column; gap:5px;}
-  .stat-label{font-size:11px; letter-spacing:.15em; color:var(--dim);}
-  .stat-bar{height:6px; border-radius:3px; background:#1a2140; overflow:hidden;}
-  .stat-fill{height:100%; background:linear-gradient(90deg,var(--cyan),var(--magenta)); border-radius:3px; transition:width .4s ease;}
-  .row{display:flex; gap:12px; z-index:2;}
-  .btn{font-family:'Orbitron'; letter-spacing:.15em; font-size:13px; padding:13px 28px; border-radius:6px;
-    border:1px solid var(--cyan); background:rgba(47,232,255,.1); color:var(--cyan); cursor:pointer; transition:.15s;}
-  .btn:hover, .btn:active{background:var(--cyan); color:#05070d; box-shadow:0 0 22px rgba(47,232,255,.5);}
-  .btn.ghost{border-color:rgba(122,134,168,.4); color:var(--dim); background:transparent;}
-  .btn.ghost:hover, .btn.ghost:active{background:rgba(122,134,168,.15); color:var(--text); box-shadow:none;}
-  .btn.magenta{border-color:var(--magenta); color:var(--magenta); background:rgba(255,47,208,.08);}
-  .btn.magenta:hover,.btn.magenta:active{background:var(--magenta); color:#05070d; box-shadow:0 0 22px rgba(255,47,208,.5);}
+    /* LAYOUT CONTAINERS */
+    #app-container {
+      width: 100%;
+      height: 100vh;
+      display: relative;
+    }
 
-  /* Track select */
-  .track-grid{display:flex; gap:16px; z-index:2; margin-bottom:22px; flex-wrap:wrap; justify-content:center; max-width:900px;}
-  .track-card{width:210px; border:1px solid rgba(122,134,168,.25); border-radius:8px; overflow:hidden; cursor:pointer;
-    background:#0b1020; transition:.18s;}
-  .track-card.active{border-color:var(--magenta); box-shadow:0 0 24px rgba(255,47,208,.3);}
-  .track-thumb{height:110px; position:relative;}
-  .track-info{padding:10px 12px;}
-  .track-info .tname{font-family:'Orbitron'; font-size:13px; letter-spacing:.08em;}
-  .track-info .tmeta{font-size:11px; color:var(--dim); margin-top:4px;}
+    /* 1. LANDING OVERLAY */
+    #landing-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 1000;
+      background: radial-gradient(circle at center, #0e1726 0%, #04060a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      transition: opacity 1.2s cubic-bezier(0.77, 0, 0.175, 1), transform 1.2s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+    #landing-screen.hidden {
+      opacity: 0;
+      transform: scale(1.05);
+      pointer-events: none;
+    }
+    .landing-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brand-tag {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      letter-spacing: 0.2em;
+    }
+    .landing-hero {
+      max-width: 650px;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+    .landing-title {
+      font-size: 4.5rem;
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #ffffff 0%, #8a99ad 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .landing-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      margin-bottom: 2.5rem;
+      font-weight: 300;
+      line-height: 1.6;
+    }
 
-  /* Loading / countdown */
-  #loadingScreen .loadbar{width:min(420px,80vw); height:4px; background:#141b33; border-radius:2px; overflow:hidden; z-index:2;}
-  #loadingScreen .loadfill{height:100%; width:0%; background:linear-gradient(90deg,var(--cyan),var(--magenta));}
-  #loadingScreen .loadtip{margin-top:14px; font-size:12px; color:var(--dim); letter-spacing:.1em; z-index:2;}
+    /* 2. MAIN SIMULATION INTERFACE */
+    #main-interface {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: 56px 1fr 140px;
+      grid-template-columns: 340px 1fr 360px;
+      gap: 12px;
+      padding: 12px;
+      z-index: 10;
+      pointer-events: none; /* Let canvas capture underneath */
+    }
+    #main-interface * {
+      pointer-events: auto;
+    }
 
-  #countdownNum{font-family:'Orbitron'; font-size:140px; font-weight:900; color:var(--cyan);
-    text-shadow:0 0 40px rgba(47,232,255,.6); animation:countPop .9s ease;}
-  @keyframes countPop{0%{transform:scale(.4);opacity:0}30%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
+    /* TOP NAVBAR */
+    header.navbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+    }
+    .nav-left, .nav-center, .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+    .logo {
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: 0.1em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo-badge {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-cyan);
+      border-radius: 50%;
+      box-shadow: var(--glow-cyan);
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .nav-tab {
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .nav-tab.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      font-weight: 500;
+    }
 
-  /* HUD */
-  #hud{position:absolute;inset:0;pointer-events:none;z-index:5; display:none;}
-  #hud.active{display:block;}
-  .hud-top-left{position:absolute; top:16px; left:16px; font-family:'Orbitron'; }
-  .hud-pos{font-size:34px; font-weight:900; color:var(--cyan); text-shadow:0 0 12px rgba(47,232,255,.6); line-height:1;}
-  .hud-pos small{font-size:14px; color:var(--dim); font-family:'Rajdhani';}
-  .hud-top-center{position:absolute; top:16px; left:50%; transform:translateX(-50%); text-align:center;}
-  .hud-lap{font-family:'Orbitron'; font-size:15px; letter-spacing:.1em; color:var(--text); text-shadow:0 0 8px rgba(0,0,0,.8);}
-  .hud-time{font-size:13px; color:var(--dim); margin-top:2px;}
-  .hud-bottom-right{position:absolute; bottom:18px; right:18px; display:flex; align-items:flex-end; gap:14px;}
-  .gauge-wrap{position:relative; width:150px; height:150px;}
-  #speedGauge{width:150px;height:150px;}
-  .gauge-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
-  .gauge-speed{font-family:'Orbitron'; font-size:34px; font-weight:800; color:var(--text); line-height:1;}
-  .gauge-unit{font-size:10px; color:var(--dim); letter-spacing:.2em;}
-  .gear-rpm{display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:8px;}
-  .gear{font-family:'Orbitron'; font-size:26px; font-weight:900; color:var(--amber); text-shadow:0 0 10px rgba(255,176,32,.6);
-    width:44px;height:44px;border:2px solid rgba(255,176,32,.4);border-radius:8px;display:flex;align-items:center;justify-content:center;}
-  .nitro-bar-wrap{width:34px;height:100px;border:1px solid rgba(47,232,255,.35); border-radius:6px; overflow:hidden;
-    display:flex; align-items:flex-end; background:rgba(11,16,32,.6);}
-  .nitro-fill{width:100%; background:linear-gradient(0deg,var(--cyan),var(--magenta)); transition:height .1s linear; box-shadow:0 0 14px rgba(47,232,255,.5);}
-  .nitro-label{font-size:9px; letter-spacing:.15em; color:var(--dim); text-align:center; margin-top:4px; writing-mode:vertical-rl;}
-  .hud-bottom-left{position:absolute; bottom:18px; left:18px;}
-  #miniMap{border-radius:8px; border:1px solid rgba(122,134,168,.3); background:rgba(5,7,13,.55);}
-  .hud-toast{position:absolute; top:70px; left:50%; transform:translateX(-50%); font-family:'Orbitron'; font-size:20px;
-    letter-spacing:.15em; color:var(--amber); text-shadow:0 0 16px rgba(255,176,32,.6); opacity:0; transition:opacity .3s;}
-  .hud-toast.show{opacity:1;}
-  .pause-hint{position:absolute; top:16px; right:16px; font-size:11px; color:var(--dim); letter-spacing:.1em; text-align:right; line-height:1.6;}
+    /* LEFT CONTROL PANEL */
+    aside.control-panel {
+      grid-row: 2;
+      grid-column: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .panel-section {
+      padding: 1rem;
+    }
+    .panel-title {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .control-group {
+      margin-bottom: 1.25rem;
+    }
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    .control-value {
+      font-family: var(--font-mono);
+      color: var(--accent-cyan);
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--text-main);
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+      transition: transform 0.1s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      background: var(--accent-cyan);
+    }
 
-  /* Pause overlay */
-  #pauseOverlay{position:absolute;inset:0; background:rgba(3,4,8,.75); backdrop-filter:blur(6px); z-index:20;
-    display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px;}
-  #pauseOverlay.active{display:flex;}
+    /* RIGHT METRICS & INTELLIGENCE PANEL */
+    aside.metrics-panel {
+      grid-row: 2;
+      grid-column: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+    }
+    .nexus-score-card {
+      padding: 1.25rem;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(0, 229, 255, 0.05) 0%, rgba(13, 17, 23, 0.75) 100%);
+      position: relative;
+    }
+    .nexus-score-value {
+      font-size: 3.5rem;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      line-height: 1;
+      margin: 0.5rem 0;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .metric-box {
+      padding: 0.75rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .metric-num {
+      font-size: 1.2rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
 
-  /* Results */
-  #resultsScreen .result-card{width:min(440px,90vw); background:rgba(11,16,32,.7); border:1px solid rgba(47,232,255,.25);
-    border-radius:10px; padding:26px 24px; z-index:2; margin-bottom:20px;}
-  .result-row{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed rgba(122,134,168,.2); font-size:14px;}
-  .result-row:last-child{border-bottom:none;}
-  .result-row b{color:var(--cyan); font-family:'Orbitron'; font-size:13px;}
-  .place-big{font-family:'Orbitron'; font-size:56px; font-weight:900; text-align:center; margin-bottom:4px;
-    background:linear-gradient(90deg,var(--cyan),var(--magenta)); -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .place-sub{text-align:center; letter-spacing:.3em; font-size:12px; color:var(--dim); margin-bottom:18px;}
+    /* BOTTOM TIMELINE & EVENT FEED */
+    footer.timeline-panel {
+      grid-row: 3;
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 12px;
+    }
+    .time-controls {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 1rem;
+      gap: 10px;
+    }
+    .time-btns {
+      display: flex;
+      gap: 6px;
+    }
+    .event-feed {
+      padding: 0.85rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 2px solid var(--accent-cyan);
+      border-radius: 0 4px 4px 0;
+      animation: fadeIn 0.3s ease;
+    }
+    .event-item.critical { border-left-color: var(--accent-red); }
+    .event-item.warning { border-left-color: var(--accent-amber); }
+    .event-time { font-family: var(--font-mono); color: var(--text-dim); }
 
-  /* touch controls */
-  #touchControls{position:absolute; inset:0; z-index:6; display:none; pointer-events:none;}
-  #touchControls.active{display:block;}
-  .tbtn{position:absolute; pointer-events:auto; border-radius:50%; background:rgba(20,26,48,.55); border:1px solid rgba(47,232,255,.35);
-    display:flex; align-items:center; justify-content:center; font-family:'Orbitron'; color:var(--cyan); font-size:20px; user-select:none;}
-  #tLeft{left:18px; bottom:34px; width:64px;height:64px;}
-  #tRight{left:92px; bottom:34px; width:64px;height:64px;}
-  #tBrake{right:18px; bottom:34px; width:70px;height:70px; color:var(--amber); border-color:rgba(255,176,32,.4);}
-  #tGas{right:100px; bottom:34px; width:78px;height:78px; color:var(--cyan);}
-  #tNitro{right:18px; bottom:120px; width:56px;height:56px; color:var(--magenta); border-color:rgba(255,47,208,.4); font-size:12px; letter-spacing:.05em;}
-  .tbtn.on{background:rgba(47,232,255,.3);}
+    /* WEBGL CANVAS CONTAINER */
+    #canvas-container {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
 
-  .footer-credit{position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:10px; color:#3d4566; letter-spacing:.15em; z-index:1;}
+    /* CAUSALITY PREVIEW & OVERLAYS */
+    #causality-overlay {
+      position: absolute;
+      top: 70px;
+      left: 360px;
+      padding: 12px 18px;
+      background: rgba(10, 14, 20, 0.95);
+      border: 1px solid var(--accent-cyan);
+      box-shadow: var(--glow-cyan);
+      border-radius: 8px;
+      z-index: 50;
+      display: none;
+      animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-  select.set-select, input[type=range]{accent-color:var(--cyan);}
-  .settings-row{display:flex; align-items:center; justify-content:space-between; width:min(360px,84vw); margin-bottom:16px; z-index:2;}
-  .settings-row label{font-size:13px; letter-spacing:.08em; color:var(--dim);}
-  .settings-row select{background:#0b1020; color:var(--text); border:1px solid rgba(122,134,168,.3); border-radius:5px; padding:7px 10px; font-family:'Rajdhani'; font-size:13px;}
+    /* EMERGENCY OVERLAY MODAL */
+    #emergency-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 3, 8, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 500;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      border: 2px solid var(--accent-red);
+    }
+    #emergency-overlay.active {
+      display: flex;
+    }
 
-  ::-webkit-scrollbar{display:none;}
-</style>
+    /* MODAL WINDOW GENERIC */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      z-index: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-window {
+      width: 800px;
+      max-height: 85vh;
+      background: var(--bg-dark);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    /* DISTRICT HUDS */
+    #district-hud {
+      position: absolute;
+      bottom: 160px;
+      left: 360px;
+      padding: 1rem;
+      width: 280px;
+      display: none;
+      z-index: 40;
+    }
+
+    /* Keyframe Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: inset 0 0 50px rgba(255, 51, 102, 0.2); }
+      50% { box-shadow: inset 0 0 100px rgba(255, 51, 102, 0.5); }
+    }
+
+    .pulse-emergency {
+      animation: pulseRed 2s infinite;
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 1024px) {
+      #main-interface {
+        grid-template-columns: 280px 1fr 280px;
+      }
+    }
+    @media (max-width: 768px) {
+      #main-interface {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto;
+        overflow-y: auto;
+        pointer-events: auto;
+      }
+      aside.control-panel, aside.metrics-panel {
+        grid-column: 1;
+      }
+      #canvas-container {
+        position: relative;
+        height: 350px;
+      }
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-  <canvas id="gl"></canvas>
 
-  <!-- MAIN MENU -->
-  <div id="mainMenuScreen" class="screen">
-    <div class="grid-bg"></div>
-    <div class="title-wrap">
-      <div class="kicker">ARCADE RACING SERIES</div>
-      <h1 class="logo display">OMEGA RACING</h1>
-      <div class="byline">CREATED BY OM GUPTA</div>
-    </div>
-    <div class="menu-list">
-      <button class="menu-btn" data-action="play">PLAY<span class="sub">Quick race — pick a track and go</span></button>
-      <button class="menu-btn" data-action="garage">GARAGE<span class="sub">Browse cars &amp; stats</span></button>
-      <button class="menu-btn" data-action="settings">SETTINGS<span class="sub">Difficulty, laps, graphics</span></button>
-      <button class="menu-btn" data-action="credits">CREDITS</button>
-    </div>
-    <div class="footer-credit">OMEGA RACING · CREATED BY OM GUPTA · © 2026 OM GUPTA</div>
-  </div>
+  <div id="app-container">
 
-  <!-- GARAGE / CAR SELECT -->
-  <div id="carSelectScreen" class="screen hidden">
-    <div class="panel-title display">SELECT YOUR CAR</div>
-    <div class="car-stage"><canvas id="carPreview"></canvas></div>
-    <div class="car-name display" id="carNameLbl">—</div>
-    <div class="car-picker" id="carPicker"></div>
-    <div class="stat-grid" id="carStats"></div>
-    <div class="row">
-      <button class="btn ghost" id="carBackBtn">BACK</button>
-      <button class="btn" id="carConfirmBtn">CONFIRM</button>
-    </div>
-  </div>
+    <!-- 3D WEBGL WORLD CANVAS -->
+    <div id="canvas-container"></div>
 
-  <!-- TRACK SELECT -->
-  <div id="trackSelectScreen" class="screen hidden">
-    <div class="panel-title display">SELECT TRACK</div>
-    <div class="track-grid" id="trackGrid"></div>
-    <div class="row">
-      <button class="btn ghost" id="trackBackBtn">BACK</button>
-      <button class="btn magenta" id="trackConfirmBtn">START RACE</button>
-    </div>
-  </div>
-
-  <!-- LOADING -->
-  <div id="loadingScreen" class="screen hidden">
-    <div class="panel-title display">LOADING TRACK</div>
-    <div class="loadbar"><div class="loadfill" id="loadFill"></div></div>
-    <div class="loadtip" id="loadTip">TIP: HOLD SHIFT FOR NITRO BOOST</div>
-  </div>
-
-  <!-- COUNTDOWN (overlays canvas once race scene ready) -->
-  <div id="countdownScreen" class="screen hidden" style="background:transparent;">
-    <div id="countdownNum" class="display">3</div>
-  </div>
-
-  <!-- HUD -->
-  <div id="hud">
-    <div class="hud-top-left">
-      <div class="hud-pos" id="hudPos">1<small>/8</small></div>
-    </div>
-    <div class="hud-top-center">
-      <div class="hud-lap" id="hudLap">LAP 1 / 3</div>
-      <div class="hud-time" id="hudTime">00:00.00</div>
-    </div>
-    <div class="pause-hint">ESC · PAUSE<br>C · CAMERA</div>
-    <div class="hud-toast" id="hudToast">GO!</div>
-    <div class="hud-bottom-left">
-      <canvas id="miniMap" width="130" height="130"></canvas>
-    </div>
-    <div class="hud-bottom-right">
-      <div class="nitro-bar-wrap"><div class="nitro-fill" id="nitroFill" style="height:100%;"></div></div>
-      <div class="gear-rpm">
-        <div class="gear" id="gearLbl">1</div>
+    <!-- 1. LANDING SCREEN -->
+    <div id="landing-screen">
+      <div class="landing-header">
+        <div class="logo">
+          <div class="logo-badge"></div>
+          NEXUS
+        </div>
+        <div class="brand-tag mono">CREATED BY OM GUPTA</div>
       </div>
-      <div class="gauge-wrap">
-        <canvas id="speedGauge" width="150" height="150"></canvas>
-        <div class="gauge-center">
-          <div class="gauge-speed" id="speedLbl">0</div>
-          <div class="gauge-unit">KM/H</div>
+
+      <div class="landing-hero">
+        <div class="brand-tag mono" style="margin-bottom: 1rem;">SYSTEM VERSION 4.0.8 // LIVE SIMULATOR</div>
+        <h1 class="landing-title">A LIVING WORLD SIMULATOR</h1>
+        <p class="landing-subtitle">Every decision ripple-effects through energy, economy, population, and urban dynamics. Experience living deterministic systemic feedback in real-time.</p>
+        
+        <button id="btn-enter" class="btn btn-accent" style="padding: 14px 32px; font-size: 1rem;">
+          <i data-lucide="power"></i> ENTER THE SIMULATION
+        </button>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;" class="mono uppercase">
+        <span style="font-size: 0.75rem; color: var(--text-dim);">[ SYSTEM READY — DETERMINISTIC ENGINE ONLINE ]</span>
+        <span style="font-size: 0.75rem; color: var(--text-dim);">3D WEBGL GRAPHICS // HIGH PRECISION SIM</span>
+      </div>
+    </div>
+
+    <!-- 2. MAIN SIMULATION INTERFACE -->
+    <div id="main-interface">
+
+      <!-- TOP BAR -->
+      <header class="navbar glass">
+        <div class="nav-left">
+          <div class="logo">
+            <div class="logo-badge"></div>
+            NEXUS
+          </div>
+          <span class="mono" style="font-size: 0.75rem; color: var(--text-dim); padding-left: 12px; border-left: 1px solid var(--border);">METROPOLIS-01</span>
+        </div>
+
+        <div class="nav-center">
+          <div class="nav-tabs">
+            <div class="nav-tab active" onclick="app.switchTab('overview')">SIMULATION</div>
+            <div class="nav-tab" onclick="app.switchTab('scenarios')">SCENARIOS</div>
+            <div class="nav-tab" onclick="app.switchTab('analytics')">ANALYTICS</div>
+            <div class="nav-tab" onclick="app.switchTab('about')">ABOUT</div>
+          </div>
+        </div>
+
+        <div class="nav-right">
+          <button class="btn btn-accent" onclick="app.triggerSmartOptimize()" style="padding: 6px 12px; font-size: 0.75rem;">
+            <i data-lucide="sparkles"></i> OPTIMIZE
+          </button>
+          <button class="btn btn-danger" onclick="app.toggleEmergencyModal()" style="padding: 6px 12px; font-size: 0.75rem;">
+            <i data-lucide="shield-alert"></i> CRISIS MODE
+          </button>
+        </div>
+      </header>
+
+      <!-- LEFT: SYSTEM CONTROLS -->
+      <aside class="control-panel">
+        
+        <!-- SYSTEM SELECTION TABS -->
+        <div class="glass panel-section">
+          <div class="panel-title uppercase mono">
+            <span>System Controls</span>
+            <i data-lucide="sliders" style="width: 14px;"></i>
+          </div>
+
+          <!-- ENERGY -->
+          <div class="control-group">
+            <div class="control-header">
+              <span>Renewable Investment</span>
+              <span class="control-value" id="val-renewable">65%</span>
+            </div>
+            <input type="range" id="input-renewable" min="10" max="100" value="65" oninput="app.onSliderChange('renewableInvestment', this.value)">
+          </div>
+
+          <!-- TRANSPORT -->
+          <div class="control-group">
+            <div class="control-header">
+              <span>Public Transport Grid</span>
+              <span class="control-value" id="val-transport">50%</span>
+            </div>
+            <input type="range" id="input-transport" min="10" max="100" value="50" oninput="app.onSliderChange('publicTransport', this.value)">
+          </div>
+
+          <!-- INDUSTRIAL -->
+          <div class="control-group">
+            <div class="control-header">
+              <span>Industrial Expansion</span>
+              <span class="control-value" id="val-industrial">55%</span>
+            </div>
+            <input type="range" id="input-industrial" min="10" max="100" value="55" oninput="app.onSliderChange('industrialActivity', this.value)">
+          </div>
+
+          <!-- GREEN SPACES -->
+          <div class="control-group">
+            <div class="control-header">
+              <span>Green Infrastructure</span>
+              <span class="control-value" id="val-green">40%</span>
+            </div>
+            <input type="range" id="input-green" min="10" max="100" value="40" oninput="app.onSliderChange('greenCoverage', this.value)">
+          </div>
+
+          <!-- WATER RESOURCE MANAGEMENT -->
+          <div class="control-group">
+            <div class="control-header">
+              <span>Water Recycling / Tech</span>
+              <span class="control-value" id="val-water">60%</span>
+            </div>
+            <input type="range" id="input-water" min="10" max="100" value="60" oninput="app.onSliderChange('waterTech', this.value)">
+          </div>
+        </div>
+
+        <!-- SYSTEM CAUSALITY MAP -->
+        <div class="glass panel-section" style="flex: 1;">
+          <div class="panel-title uppercase mono">
+            <span>Systemic Coupling</span>
+            <i data-lucide="git-fork" style="width: 14px;"></i>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 12px;">
+            Adjusting sliders calculates non-linear differential equations affecting emissions, economy, traffic, and overall health index.
+          </p>
+          <div id="coupling-node-tree" style="font-size: 0.75rem;" class="mono">
+            <div style="color: var(--accent-cyan); margin-bottom: 4px;">● ENERGY → CO₂ EMISSIONS</div>
+            <div style="color: var(--accent-green); margin-bottom: 4px;">● GREEN COV. → AIR QUALITY</div>
+            <div style="color: var(--accent-amber); margin-bottom: 4px;">● INDUSTRY → ECONOMY + TRAFFIC</div>
+            <div style="color: var(--accent-purple);">● PUBLIC TRANS. → MOBILITY SCORE</div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT: LIVE METRICS & INTELLIGENCE -->
+      <aside class="metrics-panel">
+        
+        <!-- NEXUS INDEX SCORE -->
+        <div class="glass nexus-score-card">
+          <div class="panel-title uppercase mono" style="justify-content: center; margin-bottom: 0;">
+            <span>NEXUS INDEX // CITY HEALTH</span>
+          </div>
+          <div class="nexus-score-value" id="nexus-index-val">84</div>
+          <div id="nexus-index-trend" class="mono" style="font-size: 0.75rem; color: var(--accent-green);">
+            ▲ +1.4 STABILITY OPTIMAL
+          </div>
+        </div>
+
+        <!-- SECONDARY METRICS -->
+        <div class="glass panel-section">
+          <div class="panel-title uppercase mono">
+            <span>System Telemetry</span>
+            <i data-lucide="activity" style="width: 14px;"></i>
+          </div>
+
+          <div class="metric-grid">
+            <div class="metric-box">
+              <div class="metric-label">AIR QUALITY</div>
+              <div class="metric-num" id="met-air" style="color: var(--accent-green);">88</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">TRAFFIC DENSITY</div>
+              <div class="metric-num" id="met-traffic" style="color: var(--accent-amber);">42%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">GRID RESILIENCE</div>
+              <div class="metric-num" id="met-grid" style="color: var(--accent-cyan);">91%</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-label">ECONOMIC INDEX</div>
+              <div class="metric-num" id="met-economy" style="color: var(--text-main);">76</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NEXUS INTELLIGENCE INSIGHTS -->
+        <div class="glass panel-section" style="flex: 1;">
+          <div class="panel-title uppercase mono">
+            <span>NEXUS AI Intelligence</span>
+            <i data-lucide="cpu" style="width: 14px;"></i>
+          </div>
+          <div id="ai-insights-container" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Dynamic insights go here -->
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- BOTTOM: TIMELINE & EVENT FEED -->
+      <footer class="timeline-panel">
+        
+        <div class="glass time-controls">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="mono" style="font-size: 0.75rem; color: var(--text-muted);" id="sim-clock">YEAR 2026 // M08</span>
+            <span class="mono" style="font-size: 0.75rem; color: var(--accent-cyan);" id="sim-speed-indicator">1x SPEED</span>
+          </div>
+          <div class="time-btns">
+            <button class="btn" onclick="app.togglePlayPause()" id="btn-playpause"><i data-lucide="pause"></i></button>
+            <button class="btn" onclick="app.setSpeed(1)">1x</button>
+            <button class="btn" onclick="app.setSpeed(2)">2x</button>
+            <button class="btn" onclick="app.setSpeed(5)">5x</button>
+            <button class="btn" onclick="app.resetSim()"><i data-lucide="rotate-ccw"></i></button>
+          </div>
+        </div>
+
+        <div class="glass event-feed" id="event-feed-container">
+          <!-- Live events get inserted here -->
+        </div>
+
+      </footer>
+
+      <!-- CAUSALITY PREVIEW FLOATING OVERLAY -->
+      <div id="causality-overlay" class="mono">
+        <div style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 4px;">PROJECTED IMPACT PREVIEW</div>
+        <div id="causality-text" style="font-size: 0.85rem; color: var(--accent-cyan);"></div>
+      </div>
+
+      <!-- DISTRICT SELECTION HUD -->
+      <div id="district-hud" class="glass">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span class="mono" style="font-weight: 700; color: var(--accent-cyan);" id="district-title">CENTRAL CORE</span>
+          <i data-lucide="x" style="width: 14px; cursor: pointer;" onclick="app.closeDistrictHud()"></i>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);" class="mono">
+          <div>POPULATION: <span id="dist-pop" style="color: var(--text-main);">1.2M</span></div>
+          <div>POWER LOAD: <span id="dist-power" style="color: var(--text-main);">84%</span></div>
+          <div>CONGESTION: <span id="dist-traffic" style="color: var(--text-main);">MED</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 3. EMERGENCY MODE OVERLAY MODAL -->
+    <div id="emergency-overlay">
+      <div style="text-align: center; max-width: 600px;" class="pulse-emergency">
+        <div class="mono" style="color: var(--accent-red); font-size: 0.9rem; letter-spacing: 0.2em; margin-bottom: 1rem;">
+          ⚠️ CRISIS INTERVENTION SYSTEM ACTIVATED
+        </div>
+        <h2 style="font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">CRITICAL METROPOLIS STRESS</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem; line-height: 1.6;">
+          An environmental/infrastructure shock is occurring. Immediate emergency power and priority route allocation required to prevent system stability cascade.
+        </p>
+
+        <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 2rem;">
+          <button class="btn btn-danger" onclick="app.resolveEmergency('power')">
+            <i data-lucide="zap"></i> REROUTE EMERGENCY POWER
+          </button>
+          <button class="btn btn-accent" onclick="app.resolveEmergency('transit')">
+            <i data-lucide="truck"></i> PRIORITY TRANSPORT DISPATCH
+          </button>
+        </div>
+
+        <button class="btn" onclick="app.toggleEmergencyModal()">DISMISS CRISIS OVERLAY</button>
+      </div>
+    </div>
+
+    <!-- 4. MODALS FOR SCENARIOS, ANALYTICS, ABOUT -->
+    <div id="generic-modal" class="modal-overlay">
+      <div class="modal-window">
+        <div class="modal-header">
+          <div class="mono" style="font-weight: 700; font-size: 1rem;" id="modal-title">SCENARIO LIBRARY</div>
+          <i data-lucide="x" style="cursor: pointer;" onclick="app.closeModal()"></i>
+        </div>
+        <div class="modal-body" id="modal-content">
+          <!-- Dynamic Content -->
         </div>
       </div>
     </div>
+
   </div>
 
-  <!-- touch controls -->
-  <div id="touchControls">
-    <div class="tbtn" id="tLeft">◀</div>
-    <div class="tbtn" id="tRight">▶</div>
-    <div class="tbtn" id="tNitro">NOS</div>
-    <div class="tbtn" id="tBrake">▼</div>
-    <div class="tbtn" id="tGas">▲</div>
-  </div>
+  <script>
+    /* =========================================================================
+       NEXUS SIMULATION ENGINE & WEBGL ARCHITECTURE
+       ========================================================================= */
 
-  <!-- PAUSE -->
-  <div id="pauseOverlay">
-    <div class="panel-title display" style="margin-bottom:6px;">PAUSED</div>
-    <button class="btn" id="resumeBtn">RESUME</button>
-    <button class="btn ghost" id="restartBtn">RESTART RACE</button>
-    <button class="btn ghost" id="quitBtn">QUIT TO MENU</button>
-  </div>
+    // 1. SIMULATION STATE
+    const state = {
+      // Core Time Controls
+      year: 2026,
+      month: 8,
+      tickCount: 0,
+      isRunning: true,
+      simSpeed: 1,
 
-  <!-- RESULTS -->
-  <div id="resultsScreen" class="screen hidden">
-    <div class="place-big display" id="placeBig">1ST</div>
-    <div class="place-sub">RACE COMPLETE</div>
-    <div class="result-card">
-      <div class="result-row"><span>Race Time</span><b id="rTime">00:00.00</b></div>
-      <div class="result-row"><span>Best Lap</span><b id="rBestLap">00:00.00</b></div>
-      <div class="result-row"><span>Avg. Speed</span><b id="rAvgSpeed">0 KM/H</b></div>
-      <div class="result-row"><span>Nitro Used</span><b id="rNitro">0</b></div>
-      <div class="result-row"><span>Credits Earned</span><b id="rCredits">+0</b></div>
-      <div class="result-row"><span>XP Earned</span><b id="rXP">+0</b></div>
-    </div>
-    <div class="row">
-      <button class="btn ghost" id="menuFromResultsBtn">MAIN MENU</button>
-      <button class="btn" id="raceAgainBtn">RACE AGAIN</button>
-    </div>
-  </div>
+      // User Slider Controls (0-100)
+      controls: {
+        renewableInvestment: 65,
+        publicTransport: 50,
+        industrialActivity: 55,
+        greenCoverage: 40,
+        waterTech: 60
+      },
 
-</div>
+      // Dynamic Evaluated Metrics (Computed real-time by Differential Equations)
+      metrics: {
+        nexusIndex: 84,
+        airQuality: 88,
+        trafficDensity: 42,
+        gridResilience: 91,
+        economicIndex: 76,
+        co2Emissions: 450,
+        populationHappiness: 82
+      },
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
-  }
-}
-</script>
-<script type="module">
-import * as THREE from "three";
+      // Active Crisis State
+      emergencyActive: false,
 
-/* =========================================================================
-   OMEGA RACING — single-file build
-   Sections: state machine, track/env generation, car physics, AI, HUD,
-   camera, save system.
-   ========================================================================= */
+      // Event Log History
+      eventLog: [],
 
-/* ---------------- Global state ---------------- */
-const SAVE_KEY = "omega_racing_save_v1";
-function loadSave(){
-  try{
-    const raw = localStorage.getItem(SAVE_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  return { credits:0, xp:0, bestLaps:{}, settings:{ laps:3, difficulty:"medium", graphics:"high", opponents:5 } };
-}
-function saveSave(s){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(s)); }catch(e){} }
-const SAVE = loadSave();
+      // District Specific Data
+      districts: {
+        core: { name: 'CENTRAL CORE', pop: '1.4M', power: '88%', traffic: 'HIGH' },
+        industrial: { name: 'INDUSTRIAL BELT', pop: '0.4M', power: '95%', traffic: 'MED' },
+        tech: { name: 'TECH QUARTER', pop: '0.8M', power: '72%', traffic: 'LOW' },
+        green: { name: 'GREEN SPRINGS', pop: '0.6M', power: '45%', traffic: 'LOW' }
+      }
+    };
 
-const CARS = [
-  { id:"apex",  name:"VELOR APEX",   accel:7.5, top:1.00, handling:0.75, brake:0.80, nitro:0.85, weight:0.55, color:0x2fe8ff },
-  { id:"raptor",name:"KAIZEN RAPTOR",accel:0.95,top:0.80, handling:0.95, brake:0.90, nitro:0.70, weight:0.40, color:0xff2fd0 },
-  { id:"titan", name:"IRONVALE TITAN",accel:0.65,top:0.70, handling:0.55, brake:0.70, nitro:1.00, weight:0.85, color:0xffb020 },
-];
-// normalize display stats to 0-100 for bars (accel special-cased below)
-function statPct(car, key){
-  const map = { accel:[0.6,1.0], top:[0.6,1.0], handling:[0.5,1.0], brake:[0.6,1.0], nitro:[0.6,1.0] };
-  const [lo,hi] = map[key];
-  const v = key==="accel" ? car.accel/8 : car[key];
-  return Math.max(6, Math.min(100, Math.round(((v-lo)/(hi-lo))*100)));
-}
+    // 2. THREE.JS 3D WORLD ENGINE
+    class World3D {
+      constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.scene = new THREE.Scene();
+        this.scene.fog = new THREE.FogExp2(0x07090e, 0.015);
 
-const TRACKS = [
-  { id:"neon", name:"NEON CITY", desc:"Night · Futuristic Circuit", difficulty:"MEDIUM", color:"#2fe8ff", laps:3 },
-  { id:"mountain", name:"MOUNTAIN RUSH", desc:"Dusk · Elevation & Hairpins", difficulty:"HARD", color:"#ff2fd0", laps:3 },
-  { id:"desert", name:"DESERT STORM", desc:"Day · High-Speed Circuit", difficulty:"EASY", color:"#ffb020", laps:3 },
-];
+        this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        this.camera.position.set(30, 25, 40);
 
-const app = {
-  screen: "menu",
-  selectedCar: 0,
-  selectedTrack: 0,
-  laps: SAVE.settings.laps || 3,
-  difficulty: SAVE.settings.difficulty || "medium",
-  opponentCount: SAVE.settings.opponents || 5,
-  cameraMode: 0, // 0 third person, 1 hood, 2 first person
-};
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        this.renderer.shadowMap.enabled = true;
+        this.container.appendChild(this.renderer.domElement);
 
-/* ---------------- DOM helpers ---------------- */
-const $ = sel => document.querySelector(sel);
-functi
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        this.controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent camera under floor
+
+        this.buildings = [];
+        this.particles = null;
+
+        this.initLights();
+        this.initCityGrid();
+        this.initAtmosphereParticles();
+
+        window.addEventListener('resize', () => this.onWindowResize());
+      }
+
+      initLights() {
+        const ambientLight = new THREE.AmbientLight(0x1a2636, 1.5);
+        this.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x00e5ff, 1.2);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        this.scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0x9d4edd, 2, 50);
+        pointLight.position.set(-10, 10, -10);
+        this.scene.add(pointLight);
+      }
+
+      initCityGrid() {
+        // Ground Grid
+        const gridHelper = new THREE.GridHelper(80, 40, 0x00e5ff, 0x161c26);
+        gridHelper.position.y = -0.1;
+        this.scene.add(gridHelper);
+
+        // Generate Procedural City Buildings
+        const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+        
+        // Custom Shader/Standard Material for Futuristic Glow
+        for (let x = -15; x <= 15; x += 2.5) {
+          for (let z = -15; z <= 15; z += 2.5) {
+            if (Math.random() > 0.3) {
+              const height = Math.random() * 8 + 2;
+              const isTech = Math.random() > 0.7;
+              
+              const mat = new THREE.MeshStandardMaterial({
+                color: isTech ? 0x0e1b29 : 0x121824,
+                roughness: 0.2,
+                metalness: 0.8,
+                wireframe: false
+              });
+
+              const building = new THREE.Mesh(buildingGeo, mat);
+              building.scale.set(1.8, height, 1.8);
+              building.position.set(x + (Math.random() - 0.5), height / 2, z + (Math.random() - 0.5));
+              
+              // Raycasting click identifier
+              building.userData = { 
+                district: x < 0 ? (z < 0 ? 'core' : 'tech') : (z < 0 ? 'industrial' : 'green') 
+              };
+
+              this.scene.add(building);
+              this.buildings.push(building);
+            }
+          }
+        }
+      }
+
+      initAtmosphereParticles() {
+        const particleCount = 400;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+          positions[i] = (Math.random() - 0.5) * 80;
+          positions[i + 1] = Math.random() * 30;
+          positions[i + 2] = (Math.random() - 0.5) * 80;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const material = new THREE.PointsMaterial({
+          color: 0x00e5ff,
+          size: 0.3,
+          transparent: true,
+          opacity: 0.6
+        });
+
+        this.particles = new THREE.Points(geometry, material);
+        this.scene.add(this.particles);
+      }
+
+      updateCityVisuals(airQuality, traffic) {
+        // Adjust fog color/density dynamically based on pollution
+        if (airQuality < 50) {
+          this.scene.fog.color.setHex(0x2b1d0c); // Smog amber
+        } else {
+          this.scene.fog.color.setHex(0x07090e); // Clean dark cyan
+        }
+
+        // Animate particles
+        if (this.particles) {
+          this.particles.rotation.y += 0.001 * (traffic / 20);
+        }
+      }
+
+      render() {
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+      }
+
+      onWindowResize() {
+        this.camera.aspect = window.innerWidth / window.innerHeight;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    }
+
+    // 3. MAIN APPLICATION & SIMULATION CONTROLLER
+    class NexusApp {
+      constructor() {
+        this.world3d = new World3D('canvas-container');
+        this.initRaycaster();
+        this.initUI();
+        this.startSimLoop();
+      }
+
+      initUI() {
+        lucide.createIcons();
+
+        // Event listener for Landing Screen Enter
+        document.getElementById('btn-enter').addEventListener('click', () => {
+          document.getElementById('landing-screen').classList.add('hidden');
+          this.pushLog('System initialization complete. Simulation engine running.', 'normal');
+        });
+
+        this.updateSlidersUI();
+        this.evaluateSimulation();
+      }
+
+      // DETERMINISTIC SIMULATION MATHEMATICAL CORE
+      evaluateSimulation() {
+        const c = state.controls;
+
+        // Non-linear Differential Equations for System Feedback
+        // Air Quality boosted by renewable energy + green coverage, reduced by industrial expansion
+        state.metrics.airQuality = Math.min(100, Math.max(10, Math.round(
+          (c.renewableInvestment * 0.45) + (c.greenCoverage * 0.45) - (c.industrialActivity * 0.25) + 20
+        )));
+
+        // Traffic density reduced by public transport
+        state.metrics.trafficDensity = Math.min(100, Math.max(10, Math.round(
+          100 - (c.publicTransport * 0.75) + (c.industrialActivity * 0.2)
+        )));
+
+        // Grid Resilience boosted by renewables and water tech infrastructure
+        state.metrics.gridResilience = Math.min(100, Math.max(10, Math.round(
+          (c.renewableInvestment * 0.5) + (c.waterTech * 0.4) + 10
+        )));
+
+        // Economic Index boosted by industrial activity & transport, slight penalty for extreme regulation
+        state.metrics.economicIndex = Math.min(100, Math.max(10, Math.round(
+          (c.industrialActivity * 0.6) + (c.publicTransport * 0.25) + (c.waterTech * 0.15)
+        )));
+
+        // NEXUS INDEX: Composite Weighted Overall System Stability Score
+        state.metrics.nexusIndex = Math.round(
+          (state.metrics.airQuality * 0.25) +
+          ((100 - state.metrics.trafficDensity) * 0.2) +
+          (state.metrics.gridResilience * 0.25) +
+          (state.metrics.economicIndex * 0.3)
+        );
+
+        this.renderMetricsUI();
+        this.world3d.updateCityVisuals(state.metrics.airQuality, state.metrics.trafficDensity);
+        this.generateAIInsights();
+      }
+
+      renderMetricsUI() {
+        document.getElementById('nexus-index-val').innerText = state.metrics.nexusIndex;
+        document.getElementById('met-air').innerText = state.metrics.airQuality;
+        document.getElementById('met-traffic').innerText = state.metrics.trafficDensity + '%';
+        document.getElementById('met-grid').innerText = state.metrics.gridResilience + '%';
+        document.getElementById('met-economy').innerText = state.metrics.economicIndex;
+
+        // Visual alert check
+        if (state.metrics.nexusIndex < 50 && !state.emergencyActive) {
+          this.triggerEmergencyModal();
+        }
+      }
+
+      generateAIInsights() {
+        const container = document.getElementById('ai-insights-container');
+        container.innerHTML = '';
+
+        const insights = [];
+
+        if (state.metrics.airQuality < 50) {
+          insights.push({ type: 'critical', text: 'Air Quality dropping. Industrial emissions exceeding green filtration capacity.' });
+        } else {
+          insights.push({ type: 'normal', text: 'Atmospheric stability optimal. Carbon sequestration active.' });
+        }
+
+        if (state.metrics.trafficDensity > 60) {
+          insights.push({ type: 'warning', text: 'Congestion spike detected in Central Core. Increase transport grid.' });
+        }
+
+        if (state.controls.renewableInvestment > 80) {
+          insights.push({ type: 'normal', text: 'Energy surplus detected. Grid resilience at maximum efficiency.' });
+        }
+
+        insights.forEach(ins => {
+          const item = document.createElement('div');
+          item.className = `event-item ${ins.type}`;
+          item.style.fontSize = '0.75rem';
+          item.innerHTML = `<i data-lucide="cpu" style="width: 12px;"></i> ${ins.text}`;
+          container.appendChild(item);
+        });
+        lucide.createIcons();
+      }
+
+      onSliderChange(key, value) {
+        state.controls[key] = parseInt(value);
+        
+        // Show Causality Live Preview Tooltip
+        const causalityBox = document.getElementById('causality-overlay');
+        const causalityText = document.getElementById('causality-text');
+        
+        causalityBox.style.display = 'block';
+        causalityText.innerText = `Adjusting ${key.toUpperCase()} → Recalculating differential feedback...`;
+        
+        clearTimeout(this.causalityTimeout);
+        this.causalityTimeout = setTimeout(() => {
+          causalityBox.style.display = 'none';
+        }, 1200);
+
+        // Update Slider Value Label
+        if (key === 'renewableInvestment') document.getElementById('val-renewable').innerText = value + '%';
+        if (key === 'publicTransport') document.getElementById('val-transport').innerText = value + '%';
+        if (key === 'industrialActivity') document.getElementById('val-industrial').innerText = value + '%';
+        if (key === 'greenCoverage') document.getElementById('val-green').innerText = value + '%';
+        if (key === 'waterTech') document.getElementById('val-water').innerText = value + '%';
+
+        this.evaluateSimulation();
+      }
+
+      updateSlidersUI() {
+        document.getElementById('input-renewable').value = state.controls.renewableInvestment;
+        document.getElementById('input-transport').value = state.controls.publicTransport;
+        document.getElementById('input-industrial').value = state.controls.industrialActivity;
+        document.getElementById('input-green').value = state.controls.greenCoverage;
+        document.getElementById('input-water').value = state.controls.waterTech;
+      }
+
+      // LOGGING EVENT FEED
+      pushLog(msg, type = 'normal') {
+        const feed = document.getElementById('event-feed-container');
+        const item = document.createElement('div');
+        item.className = `event-item ${type}`;
+        
+        const timeStr = `M${state.month}:${state.tickCount.toString().padStart(2, '0')}`;
+        item.innerHTML = `<span class="event-time">[${timeStr}]</span> <span>${msg}</span>`;
+        
+        feed.prepend(item);
+        if (feed.children.length > 20) feed.removeChild(feed.lastChild);
+      }
+
+      // TIME LOOP
+      startSimLoop() {
+        const loop = () => {
+          if (state.isRunning) {
+            state.tickCount++;
+            if (state.tickCount >= 30) {
+              state.tickCount = 0;
+              state.month++;
+              if (state.month > 12) {
+                state.month = 1;
+                state.year++;
+              }
+              document.getElementById('sim-clock').innerText = `YEAR ${state.year} // M${state.month.toString().padStart(2, '0')}`;
+            }
+
+            // Periodic Simulation evaluation update
+            if (state.tickCount % 5 === 0) {
+              this.evaluateSimulation();
+            }
+          }
+
+          this.world3d.render();
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      }
+
+      togglePlayPause() {
+        state.isRunning = !state.isRunning;
+        document.getElementById('btn-playpause').innerHTML = state.isRunning ? `<i data-lucide="pause"></i>` : `<i data-lucide="play"></i>`;
+        lucide.createIcons();
+      }
+
+      setSpeed(speed) {
+        state.simSpeed = speed;
+        document.getElementById('sim-speed-indicator').innerText = `${speed}x SPEED`;
+      }
+
+      resetSim() {
+        state.controls = { renewableInvestment: 65, publicTransport: 50, industrialActivity: 55, greenCoverage: 40, waterTech: 60 };
+        this.updateSlidersUI();
+        this.evaluateSimulation();
+        this.pushLog('Simulation reset to default baseline.', 'warning');
+      }
+
+      // RAYCASTING FOR 3D DISTRICT INTERACTION
+      initRaycaster() {
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (e) => {
+          // Ignore clicks on UI elements
+          if (e.target.tagName !== 'CANVAS') return;
+
+          mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+          raycaster.setFromCamera(mouse, this.world3d.camera);
+          const intersects = raycaster.intersectObjects(this.world3d.buildings);
+
+          if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            const distKey = hit.userData.district;
+            if (distKey && state.districts[distKey]) {
+              this.openDistrictHud(state.districts[distKey]);
+            }
+          }
+        });
+      }
+
+      openDistrictHud(data) {
+        const hud = document.getElementById('district-hud');
+        document.getElementById('district-title').innerText = data.name;
+        document.getElementById('dist-pop').innerText = data.pop;
+        document.getElementById('dist-power').innerText = data.power;
+        document.getElementById('dist-traffic').innerText = data.traffic;
+        hud.style.display = 'block';
+      }
+
+      closeDistrictHud() {
+        document.getElementById('district-hud').style.display = 'none';
+      }
+
+      // SMART OPTIMIZE ALGORITHM
+      triggerSmartOptimize() {
+        state.controls.renewableInvestment = 85;
+        state.controls.publicTransport = 75;
+        state.controls.greenCoverage = 65;
+        state.controls.industrialActivity = 45;
+        this.updateSlidersUI();
+        this.evaluateSimulation();
+        this.pushLog('AI Optimization applied: Balanced sustainability configuration loaded.', 'normal');
+      }
+
+      // CRISIS MODE
+      toggleEmergencyModal() {
+        state.emergencyActive = !state.emergencyActive;
+        const modal = document.getElementById('emergency-overlay');
+        if (state.emergencyActive) {
+          modal.classList.add('active');
+          this.pushLog('CRISIS MODE ACTIVATED: Emergency state initiated.', 'critical');
+        } else {
+          modal.classList.remove('active');
+        }
+      }
+
+      resolveEmergency(action) {
+        if (action === 'power') {
+          state.controls.renewableInvestment = Math.min(100, state.controls.renewableInvestment + 20);
+          this.pushLog('CRISIS RESOLVED: Emergency power rerouted successfully.', 'normal');
+        } else {
+          state.controls.publicTransport = Math.min(100, state.controls.publicTransport + 25);
+          this.pushLog('CRISIS RESOLVED: Priority traffic lanes cleared.', 'normal');
+        }
+        this.updateSlidersUI();
+        this.evaluateSimulation();
+        this.toggleEmergencyModal();
+      }
+
+      // NAVIGATION MODALS
+      switchTab(tab) {
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+
+        if (tab === 'overview') {
+          this.closeModal();
+          return;
+        }
+
+        const modal = document.getElementById('generic-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalContent = document.getElementById('modal-content');
+
+        if (tab === 'scenarios') {
+          modalTitle.innerText = 'PREDEFINED SCENARIO LIBRARY';
+          modalContent.innerHTML = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="glass panel-section" style="cursor: pointer;" onclick="app.loadScenario('green')">
+                <div style="color: var(--accent-green); font-weight: 700; margin-bottom: 4px;">GREEN TRANSFORMATION</div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Max renewables, high green coverage, restricted heavy industry.</p>
+              </div>
+              <div class="glass panel-section" style="cursor: pointer;" onclick="app.loadScenario('industrial')">
+                <div style="color: var(--accent-amber); font-weight: 700; margin-bottom: 4px;">RAPID INDUSTRIAL EXPANSION</div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">High economic output, elevated traffic and power grid strain.</p>
+              </div>
+            </div>
+          `;
+        } else if (tab === 'analytics') {
+          modalTitle.innerText = 'SYSTEMIC ANALYTICS & HISTORICAL TRENDS';
+          modalContent.innerHTML = `
+            <div style="height: 250px; width: 100%;">
+              <canvas id="analyticsChart"></canvas>
+            </div>
+          `;
+          setTimeout(() => this.renderAnalyticsChart(), 100);
+        } else if (tab === 'about') {
+          modalTitle.innerText = 'ABOUT NEXUS SIMULATOR';
+          modalContent.innerHTML = `
+            <div style="line-height: 1.6; color: var(--text-muted); font-size: 0.9rem;">
+              <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">NEXUS — A Living World Simulator</h3>
+              <p style="margin-bottom: 1rem;">Created by <strong>Om Gupta</strong>.</p>
+              <p>NEXUS is designed as a competition-grade interactive urban world simulator engineered with Three.js WebGL graphics, custom non-linear differential evaluation loops, and a responsive glassmorphic aesthetic.</p>
+            </div>
+          `;
+        }
+
+        modal.classList.add('active');
+      }
+
+      loadScenario(type) {
+        if (type === 'green') {
+          state.controls = { renewableInvestment: 95, publicTransport: 80, industrialActivity: 25, greenCoverage: 90, waterTech: 85 };
+        } else if (type === 'industrial') {
+          state.controls = { renewableInvestment: 30, publicTransport: 40, industrialActivity: 95, greenCoverage: 20, waterTech: 50 };
+        }
+        this.updateSlidersUI();
+        this.evaluateSimulation();
+        this.closeModal();
+        this.pushLog(`Scenario loaded: ${type.toUpperCase()}`, 'normal');
+      }
+
+      renderAnalyticsChart() {
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8'],
+            datasets: [
+              { label: 'NEXUS Index', data: [70, 72, 75, 78, 80, 82, 83, state.metrics.nexusIndex], borderColor: '#00e5ff', fill: false },
+              { label: 'Air Quality', data: [60, 65, 70, 72, 80, 85, 87, state.metrics.airQuality], borderColor: '#00ff88', fill: false }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { grid: { color: 'rgba(255,255,255,0.05)' } },
+              x: { grid: { color: 'rgba(255,255,255,0.05)' } }
+            }
+          }
+        });
+      }
+
+      closeModal() {
+        document.getElementById('generic-modal').classList.remove('active');
+        document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-tab')[0].classList.add('active');
+      }
+    }
+
+    // Initialize Application on DOM Ready
+    let app;
+    window.addEventListener('DOMContentLoaded', () => {
+      app = new NexusApp();
+    });
+  </script>
+</body>
+</html>
